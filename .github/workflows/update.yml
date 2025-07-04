@@ -1,0 +1,30 @@
+name: Update V2Ray Configs
+on:
+  schedule:
+    - cron: '0 * * * *'  # هر ساعت
+jobs:
+  update_configs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install feedparser
+
+      - name: Run update script
+        run: python update.py
+
+      - name: Commit and push sub.txt
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sub.txt
+          git commit -m "Update V2Ray configs" || echo "No changes to commit"
+          git push
