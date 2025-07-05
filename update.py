@@ -55,16 +55,14 @@ try:
                         recoded = base64.b64encode(json.dumps(data, ensure_ascii=False).encode('utf-8')).decode('utf-8')
                         cfg = "vmess://" + recoded
                     else:
-                        # حذف کامل نام فعلی و جایگزینی با ساختار دلخواه
                         flag = ""
                         if "#" in cfg:
                             parts = cfg.split("#", 1)
                             cfg = parts[0]
-                            tag = parts[1].strip().split()[0]  # فقط پرچم
+                            tag = parts[1].strip().split()[0]
                             flag = tag if tag.startswith("[") else f"[{tag}]"
                         else:
-                            flag = "[🏳️]"  # پیش‌فرض
-
+                            flag = "[🏳️]"
                         cfg += f"#{flag} t.me/rghoddoosi رسول قدوسی"
                     updated.append(cfg)
                 except Exception as e:
@@ -80,7 +78,6 @@ try:
 
         current_msg_id -= 20
 
-    # حذف کانفیگ‌های تکراری
     unique_configs = list(dict.fromkeys(configs))[:max_configs]
 
     print(f"[+] تعداد کانفیگ نهایی: {len(unique_configs)}")
@@ -96,7 +93,6 @@ except Exception as e:
     encoded = base64.b64encode(error_message.encode('utf-8')).decode('utf-8')
     print(error_message)
 
-# ذخیره فایل sub.txt — حتی اگر تکراری باشد، زمان را اضافه می‌کنیم تا GitHub آن را commit کند
+# ذخیره فایل فقط با base64 خالص ✅
 with open("sub.txt", "w", encoding="utf-8") as f:
     f.write(encoded)
-    f.write(f"\n# به‌روزرسانی: {time.strftime('%Y-%m-%d %H:%M:%S')}")
