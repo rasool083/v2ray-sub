@@ -19,7 +19,7 @@ def get_latest_post_id():
         posts = soup.find_all("div", class_="tgme_widget_message_wrap")
         if posts:
             return int(posts[-1]['data-post'].split('/')[-1])
-        return 93446  # مقدار پیش‌فرض
+        return 93446
     except Exception as e:
         print(f"[!] خطا در یافتن آخرین شناسه پست: {e}")
         return 93446
@@ -51,14 +51,15 @@ try:
                         recoded = base64.b64encode(replaced.encode('utf-8')).decode('utf-8')
                         cfg = "vmess://" + recoded
                     else:
-                        # حفظ پرچم در ابتدای نام کانفیگ
+                        # نام کانفیگ = پرچم + t.me/rghoddoosi + رسول قدوسی
+                        flag = ""
                         if "#" in cfg:
                             parts = cfg.split("#", 1)
                             cfg = parts[0]
-                            flag_part = parts[1].split()[0] if parts[1] else ""
-                        else:
-                            flag_part = ""
-                        cfg += f"#{flag_part} rghoddoosi رسول قدوسی"
+                            all_tags = parts[1].strip().split()
+                            if all_tags:
+                                flag = all_tags[0]  # مثلاً 🇫🇮[FI]
+                        cfg += f"#{flag} t.me/rghoddoosi رسول قدوسی"
                     updated.append(cfg)
                 except Exception as e:
                     print(f"[!] خطا در پردازش کانفیگ: {e}")
@@ -73,6 +74,7 @@ try:
 
         current_msg_id -= 20
 
+    # حذف کانفیگ‌های تکراری (بر اساس رشته کامل)، فقط 400 عدد
     unique_configs = list(dict.fromkeys(configs))[:max_configs]
 
     if unique_configs:
