@@ -51,14 +51,14 @@ try:
                         recoded = base64.b64encode(replaced.encode('utf-8')).decode('utf-8')
                         cfg = "vmess://" + recoded
                     else:
-                        # نام کانفیگ = پرچم + t.me/rghoddoosi + رسول قدوسی
+                        # فقط پرچم را استخراج کنیم
                         flag = ""
                         if "#" in cfg:
                             parts = cfg.split("#", 1)
                             cfg = parts[0]
-                            all_tags = parts[1].strip().split()
-                            if all_tags:
-                                flag = all_tags[0]  # مثلاً 🇫🇮[FI]
+                            tags = parts[1].strip().split()
+                            if tags:
+                                flag = tags[0]  # فقط پرچم یا [FI]
                         cfg += f"#{flag} t.me/rghoddoosi رسول قدوسی"
                     updated.append(cfg)
                 except Exception as e:
@@ -74,7 +74,6 @@ try:
 
         current_msg_id -= 20
 
-    # حذف کانفیگ‌های تکراری (بر اساس رشته کامل)، فقط 400 عدد
     unique_configs = list(dict.fromkeys(configs))[:max_configs]
 
     if unique_configs:
@@ -88,6 +87,6 @@ except Exception as e:
     encoded = base64.b64encode(error_message.encode('utf-8')).decode('utf-8')
     print(error_message)
 
-# ذخیره در sub.txt فقط محتوای base64
+# فقط خروجی base64
 with open("sub.txt", "w", encoding="utf-8") as f:
     f.write(encoded)
