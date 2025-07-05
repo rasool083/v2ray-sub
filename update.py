@@ -51,7 +51,7 @@ try:
                         recoded = base64.b64encode(replaced.encode('utf-8')).decode('utf-8')
                         cfg = "vmess://" + recoded
                     else:
-                        cfg = cfg.replace("ConfigsHubPlus", "rghoddoosi")
+                        cfg = cfg.replace("t.me/ConfigsHub", "t.me/rghoddoosi ")
                     updated.append(cfg)
                 except Exception as e:
                     print(f"[!] خطا در پردازش کانفیگ: {e}")
