@@ -52,15 +52,15 @@ try:
                         recoded = base64.b64encode(replaced.encode('utf-8')).decode('utf-8')
                         cfg = "vmess://" + recoded
                     else:
-                        # حذف هر چیزی بعد از #
+                        # حفظ پرچم در ابتدای نام کانفیگ
                         if "#" in cfg:
-    parts = cfg.split("#", 1)
-    cfg = parts[0]
-    flag_part = parts[1].split()[0] if parts[1] else ""
-else:
-    flag_part = ""
+                            parts = cfg.split("#", 1)
+                            cfg = parts[0]
+                            flag_part = parts[1].split()[0] if parts[1] else ""
+                        else:
+                            flag_part = ""
 
-cfg += f"#{flag_part} rghoddoosi رسول قدوسی"
+                        cfg += f"#{flag_part} rghoddoosi رسول قدوسی"
                     updated.append(cfg)
                 except Exception as e:
                     print(f"[!] خطا در پردازش کانفیگ: {e}")
@@ -88,6 +88,6 @@ except Exception as e:
     encoded = base64.b64encode(error_message.encode('utf-8')).decode('utf-8')
     print(error_message)
 
-# ذخیره در sub.txt با چاپ زمان برای اطمینان از بروزرسانی
+# ذخیره در sub.txt با زمان بروزرسانی
 with open("sub.txt", "w", encoding="utf-8") as f:
     f.write(encoded + "\n# updated: " + datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"))
