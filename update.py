@@ -54,8 +54,13 @@ try:
                     else:
                         # حذف هر چیزی بعد از #
                         if "#" in cfg:
-                            cfg = cfg.split("#")[0]
-                        cfg += "#rghoddoosi رسول قدوسی"
+    parts = cfg.split("#", 1)
+    cfg = parts[0]
+    flag_part = parts[1].split()[0] if parts[1] else ""
+else:
+    flag_part = ""
+
+cfg += f"#{flag_part} rghoddoosi رسول قدوسی"
                     updated.append(cfg)
                 except Exception as e:
                     print(f"[!] خطا در پردازش کانفیگ: {e}")
