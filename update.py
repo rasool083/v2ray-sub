@@ -2,7 +2,6 @@ import requests
 import re
 import base64
 from bs4 import BeautifulSoup
-from datetime import datetime
 
 base_url = "https://t.me/s/ConfigsHubPlus"
 max_pages = 30
@@ -20,7 +19,7 @@ def get_latest_post_id():
         posts = soup.find_all("div", class_="tgme_widget_message_wrap")
         if posts:
             return int(posts[-1]['data-post'].split('/')[-1])
-        return 93446
+        return 93446  # مقدار پیش‌فرض
     except Exception as e:
         print(f"[!] خطا در یافتن آخرین شناسه پست: {e}")
         return 93446
@@ -59,7 +58,6 @@ try:
                             flag_part = parts[1].split()[0] if parts[1] else ""
                         else:
                             flag_part = ""
-
                         cfg += f"#{flag_part} rghoddoosi رسول قدوسی"
                     updated.append(cfg)
                 except Exception as e:
@@ -88,6 +86,6 @@ except Exception as e:
     encoded = base64.b64encode(error_message.encode('utf-8')).decode('utf-8')
     print(error_message)
 
-# ذخیره در sub.txt با زمان بروزرسانی
+# ذخیره در sub.txt فقط محتوای base64
 with open("sub.txt", "w", encoding="utf-8") as f:
-    f.write(encoded + "\n# updated: " + datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"))
+    f.write(encoded)
