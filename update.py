@@ -2,6 +2,7 @@ import requests
 import re
 import base64
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 base_url = "https://t.me/s/ConfigsHubPlus"
 max_pages = 30
@@ -51,7 +52,10 @@ try:
                         recoded = base64.b64encode(replaced.encode('utf-8')).decode('utf-8')
                         cfg = "vmess://" + recoded
                     else:
-                        cfg = cfg.replace("t.me/ConfigsHub", "t.me/rghoddoosi رسول قدوسی")
+                        # حذف هر چیزی بعد از #
+                        if "#" in cfg:
+                            cfg = cfg.split("#")[0]
+                        cfg += "#rghoddoosi رسول قدوسی"
                     updated.append(cfg)
                 except Exception as e:
                     print(f"[!] خطا در پردازش کانفیگ: {e}")
@@ -79,6 +83,6 @@ except Exception as e:
     encoded = base64.b64encode(error_message.encode('utf-8')).decode('utf-8')
     print(error_message)
 
-# ذخیره در sub.txt
+# ذخیره در sub.txt با چاپ زمان برای اطمینان از بروزرسانی
 with open("sub.txt", "w", encoding="utf-8") as f:
-    f.write(encoded)
+    f.write(encoded + "\n# updated: " + datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"))
