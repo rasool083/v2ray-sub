@@ -23,6 +23,7 @@ for _ in range(max_pages):
     for msg in messages:
         text = msg.get_text()
         found = re.findall(r'(?:vmess|vless|trojan|ss)://[^\s\'"]+', text)
+        found = [cfg.replace("ConfigsHubPlus", "rghoddoosi") for cfg in found]
         configs.extend(found)
         if len(configs) >= max_configs:
             break
