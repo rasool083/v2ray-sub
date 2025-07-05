@@ -1,6 +1,8 @@
 import requests
 import re
 import base64
+import json
+import time
 from bs4 import BeautifulSoup
 
 base_url = "https://t.me/s/ConfigsHubPlus"
@@ -29,6 +31,7 @@ try:
 
     for _ in range(max_pages):
         url = f"{base_url}?before={current_msg_id}"
+        print(f"[*] دریافت صفحه: {url}")
         response = requests.get(url, headers=headers, timeout=15)
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -46,19 +49,22 @@ try:
                     if cfg.startswith("vmess://"):
                         raw = cfg[8:]
                         padded = raw + '=' * (-len(raw) % 4)
-                        decoded = base64.b64decode(padded).decode('utf-8')
-                        replaced = decoded.replace("ConfigsHubPlus", "rghoddoosi")
-                        recoded = base64.b64encode(replaced.encode('utf-8')).decode('utf-8')
+                        decoded_json = base64.b64decode(padded).decode('utf-8')
+                        data = json.loads(decoded_json)
+                        data['ps'] = "[🇮🇷] t.me/rghoddoosi رسول قدوسی"
+                        recoded = base64.b64encode(json.dumps(data, ensure_ascii=False).encode('utf-8')).decode('utf-8')
                         cfg = "vmess://" + recoded
                     else:
-                        # فقط پرچم را استخراج کنیم
+                        # حذف کامل نام فعلی و جایگزینی با ساختار دلخواه
                         flag = ""
                         if "#" in cfg:
                             parts = cfg.split("#", 1)
                             cfg = parts[0]
-                            tags = parts[1].strip().split()
-                            if tags:
-                                flag = tags[0]  # فقط پرچم یا [FI]
+                            tag = parts[1].strip().split()[0]  # فقط پرچم
+                            flag = tag if tag.startswith("[") else f"[{tag}]"
+                        else:
+                            flag = "[🏳️]"  # پیش‌فرض
+
                         cfg += f"#{flag} t.me/rghoddoosi رسول قدوسی"
                     updated.append(cfg)
                 except Exception as e:
@@ -74,7 +80,10 @@ try:
 
         current_msg_id -= 20
 
+    # حذف کانفیگ‌های تکراری
     unique_configs = list(dict.fromkeys(configs))[:max_configs]
+
+    print(f"[+] تعداد کانفیگ نهایی: {len(unique_configs)}")
 
     if unique_configs:
         joined = '\n'.join(unique_configs)
@@ -87,6 +96,7 @@ except Exception as e:
     encoded = base64.b64encode(error_message.encode('utf-8')).decode('utf-8')
     print(error_message)
 
-# فقط خروجی base64
+# ذخیره فایل sub.txt — حتی اگر تکراری باشد، زمان را اضافه می‌کنیم تا GitHub آن را commit کند
 with open("sub.txt", "w", encoding="utf-8") as f:
     f.write(encoded)
+    f.write(f"\n# به‌روزرسانی: {time.strftime('%Y-%m-%d %H:%M:%S')}")
