@@ -1,7 +1,10 @@
 name: Update V2Ray Configs
+
 on:
+  workflow_dispatch:  # این خط جدید برای فعال‌سازی اجرای دستی است
   schedule:
-    - cron: '0 * * * *'  # هر ساعت
+    - cron: '0 * * * *'  # اجرای خودکار هر ساعت
+
 jobs:
   update_configs:
     runs-on: ubuntu-latest
