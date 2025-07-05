@@ -3,7 +3,7 @@ name: Update V2Ray Configs
 on:
   workflow_dispatch:  # این خط جدید برای فعال‌سازی اجرای دستی است
   schedule:
-    - cron: '0 * * * *'  # اجرای خودکار هر ساعت
+  - cron: '*/30 * * * *'  # اجرای خودکار هر ساعت
 
 jobs:
   update_configs:
