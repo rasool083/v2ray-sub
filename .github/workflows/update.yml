@@ -1,33 +1,49 @@
 name: Update V2Ray Configs
 
 on:
-  workflow_dispatch:  # این خط جدید برای فعال‌سازی اجرای دستی است
+  # این گزینه به شما اجازه می‌دهد که گردش کار را به صورت دستی از تب Actions در GitHub اجرا کنید
+  workflow_dispatch:
+  
   schedule:
-  - cron: '*/30 * * * *'  # اجرای خودکار هر ساعت
+    # اجرای خودکار در دقیقه‌های 0 و 30 هر ساعت (هر 30 دقیقه)
+    - cron: '*/30 * * * *'
 
 jobs:
   update_configs:
     runs-on: ubuntu-latest
     permissions:
+      # دسترسی نوشتن برای کامیت و پوش کردن تغییرات ضروری است
       contents: write
+      
     steps:
-      - uses: actions/checkout@v3
+      # 1. دریافت کد از ریپازیتوری
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      # 2. تنظیم محیط پایتون
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.10'
 
+      # 3. نصب کتابخانه‌های مورد نیاز
       - name: Install dependencies
-        run: pip install requests beautifulsoup4
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
 
+      # 4. اجرای اسکریپت پایتون برای به‌روزرسانی کانفیگ‌ها
       - name: Run update script
         run: python update.py
 
-      - name: Commit and push sub.txt
+      # 5. کامیت و پوش کردن فایل sub.txt در صورت وجود تغییرات
+      - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add sub.txt
+          # این دستور فقط در صورتی کامیت می‌کند که فایل sub.txt تغییر کرده باشد
+          # و در صورت عدم تغییر، خطا نمی‌دهد و گردش کار را متوقف نمی‌کند
           git commit -m "Update V2Ray configs" || echo "No changes to commit"
           git push
+          
