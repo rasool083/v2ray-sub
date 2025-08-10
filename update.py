@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
 # --- تنظیمات اصلی ---
-TELEGRAM_CHANNEL_URL = "https://t.me/s/ConfigsHubPlus"
+TELEGRAM_CHANNEL_URL = "https://t.me/s/ConfigsHub"
 MAX_CONFIGS = 400
 NEW_CONFIG_NAME = "t.me/rghoddoosi رسول قدوسی"
 HEADERS = {
