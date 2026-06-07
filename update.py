@@ -6,14 +6,14 @@ import urllib.parse
 from bs4 import BeautifulSoup
 import logging
 import time
+import os
 from datetime import datetime, timezone
 
 # --- تنظیمات لاگ‌گیری ---
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
-# --- تنظیمات اصلی ---
-TELEGRAM_CHANNEL_URL = "https://t.me/s/Farah_VPN"
-MAX_CONFIGS = 400
+# --- تنظیمات اصلی و منابع ---
+MAX_CONFIGS = 1000  # حداکثر تعداد کانفیگ‌های ذخیره شده در فایل (FIFO)
 NEW_CONFIG_NAME = "t.me/rghoddoosi رسول قدوسی"
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -21,32 +21,66 @@ HEADERS = {
 }
 REQUEST_TIMEOUT = 30
 
-def save_debug_html(content):
-    """در صورت بروز خطا، محتوای HTML صفحه را برای دیباگ ذخیره می‌کند."""
-    with open("debug_page.html", "w", encoding="utf-8") as f:
-        f.write(content)
-    logging.info("محتوای HTML صفحه برای دیباگ در 'debug_page.html' ذخیره شد.")
+# شما می‌توانید هر تعداد منبع که بخواهید را در این بخش اضافه کنید
+SOURCES = [
+    {"type": "telegram", "url": "https://t.me/s/Farah_VPN"},
+    {"type": "telegram", "url": "https://t.me/s/v2rayng_org"},  # نمونه کانال دوم تلگرام
+    {"type": "raw", "url": "https://raw.githubusercontent.com/barry-far/V2ray-Configs/main/All_Configs_Sub.txt"}  # نمونه لینک گیت‌هاب یا ساب اسکریپشن
+]
+
+def load_existing_configs() -> list:
+    """کانفیگ‌های موجود در فایل sub.txt فعلی را خوانده و رمزگشایی می‌کند."""
+    if not os.path.exists("sub.txt"):
+        logging.info("فایل sub.txt یافت نشد. یک لیست جدید ایجاد می‌شود.")
+        return []
+    
+    try:
+        with open("sub.txt", "r", encoding="utf-8") as f:
+            encoded_content = f.read().strip()
+        
+        if not encoded_content:
+            return []
+        
+        # رمزگشایی Base64 فایل قبلی
+        padded_content = encoded_content + "=" * ((4 - len(encoded_content) % 4) % 4)
+        decoded_text = base64.b64decode(padded_content).decode('utf-8')
+        
+        configs = []
+        for line in decoded_text.splitlines():
+            line = line.strip()
+            # نادیده گرفتن کامنت‌ها و خطوط خالی
+            if line and not line.startswith("#"):
+                configs.append(line)
+        
+        logging.info(f"تعداد {len(configs)} کانفیگ از فایل قبلی بازیابی شد.")
+        return configs
+    except Exception as e:
+        logging.error(f"خطا در خواندن کانفیگ‌های قدیمی: {e}")
+        return []
 
 def is_config_valid(config_str: str) -> bool:
     """ساختار اولیه کانفیگ را برای معتبر بودن بررسی می‌کند."""
     if not config_str: return False
     try:
-        if config_str.startswith(("vless://", "trojan://")):
+        if config_str.startswith("vless://"):
             uuid_pattern = r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'
             return '@' in config_str and re.search(uuid_pattern, config_str) is not None
+        elif config_str.startswith("trojan://"):
+            return '@' in config_str  # تروجان لزوماً نیاز به UUID ندارد
         elif config_str.startswith("vmess://"):
             b64_part = config_str[8:]
-            data = json.loads(base64.b64decode(b64_part + '==').decode('utf-8'))
+            b64_part += "=" * ((4 - len(b64_part) % 4) % 4)
+            data = json.loads(base64.b64decode(b64_part).decode('utf-8'))
             return all(key in data for key in ['add', 'port', 'id'])
         elif config_str.startswith("ss://"):
-            return '@' in config_str and '#' in config_str
+            return '@' in config_str
     except Exception:
         return False
     return False
 
 def extract_flag_from_name(name: str) -> str:
     """پرچم ایموجی کشور را استخراج می‌کند."""
-    flag_pattern = r'(\[[A-Z]{2}\])|([🇦-🇿]{2})'
+    flag_pattern = r('(\[[A-Z]{2}\])|([🇦-🇿]{2})')
     match = re.search(flag_pattern, name, re.IGNORECASE)
     return next((g for g in match.groups() if g), "🇮🇷") if match else "🇮🇷"
 
@@ -55,14 +89,16 @@ def process_config(config_str: str) -> str | None:
     try:
         if config_str.startswith("vmess://"):
             b64_part = config_str[8:]
-            config_data = json.loads(base64.b64decode(b64_part + '==').decode('utf-8'))
+            b64_part += "=" * ((4 - len(b64_part) % 4) % 4)
+            config_data = json.loads(base64.b64decode(b64_part).decode('utf-8'))
             flag = extract_flag_from_name(config_data.get('ps', ''))
             config_data['ps'] = f"{flag} {NEW_CONFIG_NAME}"
             new_json = json.dumps(config_data, ensure_ascii=False, separators=(',', ':'))
             return "vmess://" + base64.b64encode(new_json.encode('utf-8')).decode('utf-8')
         else:
             parts = config_str.split("#", 1)
-            base_config, old_name = parts[0], (urllib.parse.unquote(parts[1]) if len(parts) > 1 else "")
+            base_config = parts[0]
+            old_name = urllib.parse.unquote(parts[1]) if len(parts) > 1 else ""
             flag = extract_flag_from_name(old_name)
             new_name_encoded = urllib.parse.quote(f"{flag} {NEW_CONFIG_NAME}")
             return f"{base_config}#{new_name_encoded}"
@@ -70,85 +106,127 @@ def process_config(config_str: str) -> str | None:
         logging.error(f"خطا در پردازش کانفیگ: {config_str[:30]}... | خطا: {e}")
         return None
 
-def scrape_telegram_channel():
-    """صفحات کانال تلگرام را با منطق پیمایش اصلاح‌شده، پیمایش می‌کند."""
-    all_configs = []
-    next_page_param = ""
+def scrape_telegram_source(url: str) -> list:
+    """صفحات یک کانال تلگرام را با منطق اصلاح‌شده پیمایش می‌کند."""
+    configs = []
+    current_url = url
     
-    for page_num in range(1, 31): # حداکثر 30 صفحه
-        if len(all_configs) >= MAX_CONFIGS:
-            logging.info(f"به سقف {MAX_CONFIGS} کانفیگ رسیدیم. پیمایش متوقف می‌شود.")
-            break
-
-        full_url = TELEGRAM_CHANNEL_URL + next_page_param
-        logging.info(f"--- در حال دریافت صفحه {page_num}: {full_url} ---")
-
+    for page_num in range(1, 6):  # بررسی تا ۵ صفحه عقب‌تر برای هر کانال در هر ران
+        logging.info(f"در حال استخراج تلگرام: صفحه {page_num} از منبع {url}")
         try:
-            response = requests.get(full_url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+            response = requests.get(current_url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
             
             code_blocks = soup.find_all("code")
-            if not code_blocks and page_num == 1:
-                logging.warning("هیچ تگ <code> در صفحه اول یافت نشد. ممکن است ساختار تلگرام تغییر کرده باشد.")
-                save_debug_html(response.text)
-
             found_in_page = 0
             for block in code_blocks:
                 for line in block.get_text(strip=True).splitlines():
-                    if is_config_valid(line.strip()):
-                        if (processed := process_config(line.strip())):
-                            all_configs.append(processed)
+                    cleaned_line = line.strip()
+                    if is_config_valid(cleaned_line):
+                        if (processed := process_config(cleaned_line)):
+                            configs.append(processed)
                             found_in_page += 1
             
-            logging.info(f"تعداد {found_in_page} کانفیگ معتبر در این صفحه یافت شد.")
+            logging.info(f"تعداد {found_in_page} کانفیگ در این صفحه یافت شد.")
 
-            # --- منطق پیمایش اصلاح‌شده و مقاوم ---
-            if not (older_posts_link := soup.select_one('a.tgme_widget_message_more[href^="?before="]')):
-                logging.info("به انتهای کانال رسیدیم یا لینک صفحه بعد یافت نشد. پایان پیمایش.")
-                break
-            
-            next_page_param = older_posts_link['href']
-            time.sleep(1)
-
-        except requests.exceptions.RequestException as e:
-            logging.error(f"خطا در اتصال به تلگرام: {e}")
-            # در صورت خطا در درخواست، ممکن است بخواهیم HTML را برای بررسی ذخیره کنیم
-            if 'response' in locals() and hasattr(response, 'text'):
-                save_debug_html(response.text)
+            # منطق پیجینیشن اصلاح شده و مقاوم در برابر آدرس‌های محلی تلگرام
+            next_link = soup.find("a", class_="tgme_widget_message_more")
+            if next_link and "before=" in next_link.get("href", ""):
+                href = next_link["href"]
+                if href.startswith("/s/"):
+                    current_url = "https://t.me" + href
+                elif href.startswith("?"):
+                    current_url = url.split('?')[0] + href
+                else:
+                    current_url = href
+                time.sleep(1.5)
+            else:
+                break  # اگر دکمه صفحه قبل نبود پایان پیمایش این کانال
+        except Exception as e:
+            logging.error(f"خطا در اسکرپ کانال تلگرام {url}: {e}")
             break
-    
-    return list(dict.fromkeys(all_configs))[:MAX_CONFIGS]
+            
+    return configs
+
+def fetch_raw_source(url: str) -> list:
+    """کانفیگ‌ها را از لینک‌های متنی خام یا ساب‌اسکریپشن‌های متنی (حتی Base64) استخراج می‌کند."""
+    configs = []
+    logging.info(f"در حال دریافت منبع خارجی: {url}")
+    try:
+        response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        text = response.text.strip()
+        
+        # بررسی اینکه آیا کل لینک به صورت Base64 انکود شده است یا خیر (فرمت رایج ساب‌ها)
+        try:
+            padded_text = text + "=" * ((4 - len(text) % 4) % 4)
+            decoded = base64.b64decode(padded_text).decode('utf-8')
+            if any(p in decoded for p in ["vmess://", "vless://", "ss://", "trojan://"]):
+                text = decoded
+        except Exception:
+            pass # محتوا متن خام است و انکود نشده
+            
+        for line in text.splitlines():
+            cleaned_line = line.strip()
+            if is_config_valid(cleaned_line):
+                if (processed := process_config(cleaned_line)):
+                    configs.append(processed)
+                    
+        logging.info(f"تعداد {len(configs)} کانفیگ از منبع متنی استخراج شد.")
+    except Exception as e:
+        logging.error(f"خطا در دریافت منبع متنی {url}: {e}")
+    return configs
 
 def main():
-    logging.info("--- شروع اسکریپت به‌روزرسانی (نسخه با دیباگ و پیمایش اصلاح‌شده) ---")
-    try:
-        final_configs = scrape_telegram_channel()
-        
-        # --- افزودن Timestamp برای تضمین تغییر فایل ---
-        utc_now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
-        comment_line = f"# Updated on: {utc_now}"
-        
-        if not final_configs:
-            logging.warning("هیچ کانفیگ معتبری یافت نشد.")
-            content = f"{comment_line}\n# ⚠️ هیچ کانفیگ معتبری در این لحظه یافت نشد."
-        else:
-            logging.info(f"مجموعاً {len(final_configs)} کانفیگ منحصر به فرد و معتبر برای ذخیره یافت شد.")
-            # قرار دادن کامنت زمان در بالای لیست کانفیگ‌ها
-            content_list = [comment_line] + final_configs
-            content = "\n".join(content_list)
+    logging.info("--- شروع اسکریپت به‌روزرسانی هوشمند مخزن کانفیگ ---")
+    
+    # ۱. بارگذاری کانفیگ‌های قدیمی موجود در فایل برای جلوگیری از حذف
+    existing_configs = load_existing_configs()
+    
+    # ۲. جمع‌آوری کانفیگ‌های جدید از تمامی منابع تعریف شده
+    new_configs = []
+    for source in SOURCES:
+        if source["type"] == "telegram":
+            new_configs.extend(scrape_telegram_source(source["url"]))
+        elif source["type"] == "raw":
+            new_configs.extend(fetch_raw_source(source["url"]))
             
-        encoded_content = base64.b64encode(content.encode('utf-8')).decode('utf-8')
-
-    except Exception as e:
-        logging.error(f"یک خطای کلی و پیش‌بینی‌نشده در اجرای اسکریپت رخ داد: {e}", exc_info=True)
-        error_message = f"# Updated on: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S %Z')}\n# ⚠️ خطا در اجرای اسکریپت: {e}"
-        encoded_content = base64.b64encode(error_message.encode('utf-8')).decode('utf-8')
-
+    # ۳. ادغام، حذف تکراری‌های هوشمند و حفظ اولویت زمانی (FIFO)
+    # با معکوس کردن لیست، کانفیگ‌های جدیدی که تکراری هستند جایگزین نسخه‌های قدیمی در انتهای لیست می‌شوند (تمدید انقضا)
+    combined = existing_configs + new_configs
+    unique_reversed = []
+    seen = set()
+    for config in reversed(combined):
+        if config not in seen:
+            seen.add(config)
+            unique_reversed.append(config)
+            
+    final_configs = list(reversed(unique_reversed))
+    
+    # اعمال محدودیت ظرفیت (حداکثر ۱۰۰۰ کانفیگ پایانی نگه داشته شده و قدیمی‌ها سرریز می‌شوند)
+    if len(final_configs) > MAX_CONFIGS:
+        dropped_count = len(final_configs) - MAX_CONFIGS
+        final_configs = final_configs[-MAX_CONFIGS:]
+        logging.info(f"تعداد {dropped_count} کانفیگ قدیمی به دلیل رسیدن به سقف ظرفیت حذف شدند.")
+        
+    # ۴. ساخت محتوای نهایی و انکود به Base64
+    utc_now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
+    comment_line = f"# Updated on: {utc_now}\n# Total Active Configs: {len(final_configs)}"
+    
+    if not final_configs:
+        content = f"{comment_line}\n# ⚠️ هیچ کانفیگ معتبری یافت نشد."
+    else:
+        content = comment_line + "\n" + "\n".join(final_configs)
+        
+    encoded_content = base64.b64encode(content.encode('utf-8')).decode('utf-8')
+    
+    # ۵. ذخیره فایل نهایی sub.txt
     with open("sub.txt", "w", encoding="utf-8") as f:
         f.write(encoded_content)
-    logging.info("--- عملیات با موفقیت انجام شد. فایل sub.txt به‌روز شد. ---")
+        
+    logging.info(f"--- عملیات با موفقیت پایان یافت. تعداد {len(final_configs)} کانفیگ یکتا ذخیره شد. ---")
 
 if __name__ == "__main__":
     main()
-    
+            
