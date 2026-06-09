@@ -25,7 +25,8 @@ REQUEST_TIMEOUT = 30
 SOURCES = [
     {"type": "telegram", "url": "https://t.me/s/Farah_VPN"},
     {"type": "telegram", "url": "https://t.me/s/v2rayng_org"},
-    {"type": "raw", "url": "https://raw.githubusercontent.com/barry-far/V2ray-Configs/main/All_Configs_Sub.txt"}
+    {"type": "raw", "url": "https://raw.githubusercontent.com/SOSIranConnect/cloudconfig/refs/heads/main/CloudActive.txt"}
+    {"type": "raw", "url": "https://raw.githubusercontent.com/ThomasJasperthecat/sub/main/sublist1.txt"}
 ]
 
 def load_existing_configs() -> list:
