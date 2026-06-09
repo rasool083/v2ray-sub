@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
 # --- تنظیمات اصلی و منابع ---
-MAX_CONFIGS = 1000  # حداکثر تعداد کانفیگ‌های ذخیره شده در فایل (FIFO)
+MAX_CONFIGS = 1000  # حداکثر ظرفیت فایل (FIFO)
 NEW_CONFIG_NAME = "t.me/rghoddoosi رسول قدوسی"
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -21,11 +21,11 @@ HEADERS = {
 }
 REQUEST_TIMEOUT = 30
 
-# شما می‌توانید هر تعداد منبع که بخواهید را در این بخش اضافه کنید
+# منابع خود را می‌توانید به هر تعداد که بخواهید در این بخش مدیریت کنید
 SOURCES = [
     {"type": "telegram", "url": "https://t.me/s/Farah_VPN"},
-    {"type": "telegram", "url": "https://t.me/s/v2rayng_org"},  # نمونه کانال دوم تلگرام
-    {"type": "raw", "url": "https://raw.githubusercontent.com/barry-far/V2ray-Configs/main/All_Configs_Sub.txt"}  # نمونه لینک گیت‌هاب یا ساب اسکریپشن
+    {"type": "telegram", "url": "https://t.me/s/v2rayng_org"},
+    {"type": "raw", "url": "https://raw.githubusercontent.com/barry-far/V2ray-Configs/main/All_Configs_Sub.txt"}
 ]
 
 def load_existing_configs() -> list:
@@ -41,14 +41,13 @@ def load_existing_configs() -> list:
         if not encoded_content:
             return []
         
-        # رمزگشایی Base64 فایل قبلی
+        # مدیریت پدینگ برای دکود کردن صحیح Base64
         padded_content = encoded_content + "=" * ((4 - len(encoded_content) % 4) % 4)
         decoded_text = base64.b64decode(padded_content).decode('utf-8')
         
         configs = []
         for line in decoded_text.splitlines():
             line = line.strip()
-            # نادیده گرفتن کامنت‌ها و خطوط خالی
             if line and not line.startswith("#"):
                 configs.append(line)
         
@@ -66,7 +65,7 @@ def is_config_valid(config_str: str) -> bool:
             uuid_pattern = r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'
             return '@' in config_str and re.search(uuid_pattern, config_str) is not None
         elif config_str.startswith("trojan://"):
-            return '@' in config_str  # تروجان لزوماً نیاز به UUID ندارد
+            return '@' in config_str
         elif config_str.startswith("vmess://"):
             b64_part = config_str[8:]
             b64_part += "=" * ((4 - len(b64_part) % 4) % 4)
@@ -80,7 +79,8 @@ def is_config_valid(config_str: str) -> bool:
 
 def extract_flag_from_name(name: str) -> str:
     """پرچم ایموجی کشور را استخراج می‌کند."""
-    flag_pattern = r('(\[[A-Z]{2}\])|([🇦-🇿]{2})')
+    # باگ پرانتز r(...) در این خط اصلاح شد
+    flag_pattern = r'(\[[A-Z]{2}\])|([🇦-🇿]{2})'
     match = re.search(flag_pattern, name, re.IGNORECASE)
     return next((g for g in match.groups() if g), "🇮🇷") if match else "🇮🇷"
 
@@ -111,7 +111,7 @@ def scrape_telegram_source(url: str) -> list:
     configs = []
     current_url = url
     
-    for page_num in range(1, 6):  # بررسی تا ۵ صفحه عقب‌تر برای هر کانال در هر ران
+    for page_num in range(1, 6):  # بررسی تا ۵ صفحه عقب‌تر برای هر کانال
         logging.info(f"در حال استخراج تلگرام: صفحه {page_num} از منبع {url}")
         try:
             response = requests.get(current_url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
@@ -128,9 +128,9 @@ def scrape_telegram_source(url: str) -> list:
                             configs.append(processed)
                             found_in_page += 1
             
-            logging.info(f"تعداد {found_in_page} کانفیگ در این صفحه یافت شد.")
+            logging.info(f"تعداد {found_in_page} کانفیگ معتبر در این صفحه یافت شد.")
 
-            # منطق پیجینیشن اصلاح شده و مقاوم در برابر آدرس‌های محلی تلگرام
+            # منطق پیجینیشن کاملاً هوشمند و داینامیک
             next_link = soup.find("a", class_="tgme_widget_message_more")
             if next_link and "before=" in next_link.get("href", ""):
                 href = next_link["href"]
@@ -142,7 +142,7 @@ def scrape_telegram_source(url: str) -> list:
                     current_url = href
                 time.sleep(1.5)
             else:
-                break  # اگر دکمه صفحه قبل نبود پایان پیمایش این کانال
+                break
         except Exception as e:
             logging.error(f"خطا در اسکرپ کانال تلگرام {url}: {e}")
             break
@@ -158,14 +158,14 @@ def fetch_raw_source(url: str) -> list:
         response.raise_for_status()
         text = response.text.strip()
         
-        # بررسی اینکه آیا کل لینک به صورت Base64 انکود شده است یا خیر (فرمت رایج ساب‌ها)
+        # دکود کردن خودکار در صورتی که کل سورس Base64 باشد
         try:
             padded_text = text + "=" * ((4 - len(text) % 4) % 4)
             decoded = base64.b64decode(padded_text).decode('utf-8')
             if any(p in decoded for p in ["vmess://", "vless://", "ss://", "trojan://"]):
                 text = decoded
         except Exception:
-            pass # محتوا متن خام است و انکود نشده
+            pass
             
         for line in text.splitlines():
             cleaned_line = line.strip()
@@ -181,10 +181,10 @@ def fetch_raw_source(url: str) -> list:
 def main():
     logging.info("--- شروع اسکریپت به‌روزرسانی هوشمند مخزن کانفیگ ---")
     
-    # ۱. بارگذاری کانفیگ‌های قدیمی موجود در فایل برای جلوگیری از حذف
+    # ۱. بارگذاری داده‌های قبلی برای جلوگیری از پاک شدن فرآیند
     existing_configs = load_existing_configs()
     
-    # ۲. جمع‌آوری کانفیگ‌های جدید از تمامی منابع تعریف شده
+    # ۲. جمع‌آوری از تمامی منابع ورودی جدید
     new_configs = []
     for source in SOURCES:
         if source["type"] == "telegram":
@@ -192,8 +192,8 @@ def main():
         elif source["type"] == "raw":
             new_configs.extend(fetch_raw_source(source["url"]))
             
-    # ۳. ادغام، حذف تکراری‌های هوشمند و حفظ اولویت زمانی (FIFO)
-    # با معکوس کردن لیست، کانفیگ‌های جدیدی که تکراری هستند جایگزین نسخه‌های قدیمی در انتهای لیست می‌شوند (تمدید انقضا)
+    # ۳. ادغام و حذف همپوشانی‌ها به صورت FIFO معکوس
+    # این متد تضمین می‌کند کانفیگی که جدیداً پیدا شده، جایگزین نسخه قدیمی گشته و انقضایش تمدید می‌شود
     combined = existing_configs + new_configs
     unique_reversed = []
     seen = set()
@@ -204,13 +204,13 @@ def main():
             
     final_configs = list(reversed(unique_reversed))
     
-    # اعمال محدودیت ظرفیت (حداکثر ۱۰۰۰ کانفیگ پایانی نگه داشته شده و قدیمی‌ها سرریز می‌شوند)
+    # اعمال سقف ظرفیت ۱۰۰۰ عددی (حذف قدیمی‌ترین‌ها در صورت سرریز شدن)
     if len(final_configs) > MAX_CONFIGS:
         dropped_count = len(final_configs) - MAX_CONFIGS
         final_configs = final_configs[-MAX_CONFIGS:]
-        logging.info(f"تعداد {dropped_count} کانفیگ قدیمی به دلیل رسیدن به سقف ظرفیت حذف شدند.")
+        logging.info(f"تعداد {dropped_count} کانفیگ قدیمی به دلیل رسیدن به سقف ظرفیت {MAX_CONFIGS} حذف شدند.")
         
-    # ۴. ساخت محتوای نهایی و انکود به Base64
+    # ۴. ساخت بدنه نهایی دیتای خروجی
     utc_now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
     comment_line = f"# Updated on: {utc_now}\n# Total Active Configs: {len(final_configs)}"
     
@@ -221,7 +221,7 @@ def main():
         
     encoded_content = base64.b64encode(content.encode('utf-8')).decode('utf-8')
     
-    # ۵. ذخیره فایل نهایی sub.txt
+    # ۵. اوررایت نهایی روی فایل پایگاه داده
     with open("sub.txt", "w", encoding="utf-8") as f:
         f.write(encoded_content)
         
