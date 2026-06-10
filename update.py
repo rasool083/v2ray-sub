@@ -24,7 +24,7 @@ REQUEST_TIMEOUT = 30
 # منابع خود را می‌توانید به هر تعداد که بخواهید در این بخش مدیریت کنید
 SOURCES = [
     {"type": "telegram", "url": "https://t.me/s/Farah_VPN"},
-    {"type": "telegram", "url": "https://t.me/s/v2rayng_org"},
+    {"type": "telegram", "url": "https://t.me/s/ConfigsHUB2"},
     {"type": "raw", "url": "https://raw.githubusercontent.com/SOSIranConnect/cloudconfig/refs/heads/main/CloudActive.txt"},
     {"type": "raw", "url": "https://raw.githubusercontent.com/ThomasJasperthecat/sub/main/sublist1.txt"},
     {"type": "raw", "url": "https://raw.githubusercontent.com/AzadNetCH/Clash/main/sub/sub_merge.txt"},
