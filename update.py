@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
 # --- تنظیمات اصلی و منابع ---
-MAX_CONFIGS = 20000  # حداکثر ظرفیت فایل (FIFO)
+MAX_CONFIGS = 20  # حداکثر ظرفیت فایل (FIFO)
 NEW_CONFIG_NAME = "t.me/rghoddoosi رسول قدوسی"
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
