@@ -103,6 +103,7 @@ SOURCES = [
     {"id": "78", "type": "raw", "url": "https://raw.githubusercontent.com/10ium/HiN-VPN/main/subscription/normal/hysteria"},
     {"id": "79", "type": "raw", "url": "https://raw.githubusercontent.com/soroushmirzaei/telegram-configs-collector/main/protocols/hysteria2"},
     {"id": "80", "type": "raw", "url": "https://raw.githubusercontent.com/mahdibland/ShadowsocksAggregator/master/Eternity.txt"},
+    {"id": "81", "type": "raw", "url": "https://v7pro.nimadarkorg.workers.dev/"},
 ]
 
 def load_existing_configs() -> list:
