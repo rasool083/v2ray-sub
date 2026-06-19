@@ -104,6 +104,7 @@ SOURCES = [
     {"id": "79", "type": "raw", "url": "https://raw.githubusercontent.com/soroushmirzaei/telegram-configs-collector/main/protocols/hysteria2"},
     {"id": "80", "type": "raw", "url": "https://raw.githubusercontent.com/mahdibland/ShadowsocksAggregator/master/Eternity.txt"},
     {"id": "81", "type": "raw", "url": "https://v7pro.nimadarkorg.workers.dev/"},
+    {"id": "82", "type": "raw", "url": "https://raw.githubusercontent.com/RKPchannel/RKP_bypass_configs/refs/heads/main/whitelist.txt"},
 ]
 
 def load_existing_configs() -> list:
