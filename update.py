@@ -105,6 +105,8 @@ SOURCES = [
     {"id": "80", "type": "raw", "url": "https://raw.githubusercontent.com/mahdibland/ShadowsocksAggregator/master/Eternity.txt"},
     {"id": "81", "type": "raw", "url": "https://v7pro.nimadarkorg.workers.dev/"},
     {"id": "82", "type": "raw", "url": "https://raw.githubusercontent.com/RKPchannel/RKP_bypass_configs/refs/heads/main/whitelist.txt"},
+    {"id": "83", "type": "raw", "url": "https://sub.vlessfo.ru/vlessforu/working_configs.txt"},
+    
 ]
 
 def load_existing_configs() -> list:
